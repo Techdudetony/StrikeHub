@@ -86,8 +86,12 @@ def add_league(
 def get_games(
     bowler_id: int | None = None,
     league_id: int | None = None,
+    user=Depends(get_current_user),                 # 🔒 require auth to view scores
     session: Session = Depends(get_session),
 ):
+    if bowler_id is None:
+        me = crud.get_bowler_by_user_id(session, user["sub"])
+        bowler_id = me.id if me else None
     return crud.list_games(session, bowler_id=bowler_id, league_id=league_id)
 
 @app.post("/games", response_model=Game)
@@ -96,6 +100,8 @@ def add_game(
     user=Depends(get_current_user),                 # 🔒 require auth to post a score
     session: Session = Depends(get_session),
 ):
+    me = crud.get_bowler_by_user_id(session, user["sub"], user.get("email", "Bowler"))
+    payload.bowler_id = me.id                       # Enforce Ownership
     return crud.create_game(session, payload)
 
 # --- Stats ---
@@ -106,3 +112,19 @@ def get_bowler_stats(bowler_id: int, session: Session = Depends(get_session)):
 @app.get("/rankings/top-averages")
 def rankings_top(limit: int = 10, session: Session = Depends(get_session)):
     return crud.top_averages(session, limit)
+
+@app.get("/me")
+def me(user=Depends(get_current_user), session: Session = Depends(get_session)):
+    supa_id = user["sub"]
+    meta = user.get("user_metadata") or {}
+    display_name = meta.get("name") or (user.get("email") or "Bowler").split("@")[0]
+    bowler = crud.ensure_bowler_for_user(session, supa_id, display_name)
+    return {
+        "user": {
+            "id": supa_id,
+            "email": user-get("email"),
+            "name": display_name,
+            "role": meta.get("role", "bowler"),
+        },
+        "bowler": bowler,
+    }

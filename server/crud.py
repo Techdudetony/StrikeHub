@@ -63,3 +63,28 @@ def top_averages(session: Session, limit: int = 10):
         rows.append({"bowler_id": bowler.id, "name": bowler.name, **stats})
     rows.sort(key=lambda x: x["average"], reverse=True)
     return rows[:limit]
+
+
+def get_bowler_by_user_id(session: Session, supabase_user_id: str) -> Bowler | None:
+    return session.exec(
+        select(Bowler).where(Bowler.supabase_user_id == supabase_user_id)
+    ).first()
+
+def ensure_bowler_for_user(session: Session, supabase_user_id: str, name: str) -> Bowler:
+    b = get_bowler_by_user_id(session, supabase_user_id)
+    if b:
+        return b
+    # Create a new Bowler owned by this Supabase user
+    b = Bowler(name=name or "New Bowler", supabase_user_id=supabase_user_id)
+    session.add(b)
+    session.commit()
+    session.refresh(b)
+    return b
+
+# if your existing create_game expects a GameCreate with bowler_id set, no change needed:
+def create_game(session: Session, payload: GameCreate) -> Game:
+    game = Game(**payload.dict(exclude_unset=True))
+    session.add(game)
+    session.commit()
+    session.refresh(game)
+    return game

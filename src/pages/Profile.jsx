@@ -1,23 +1,61 @@
-import { useStore } from '../store/useStore'
-
+import { useStore } from '../store/useStore';
 
 export default function Profile() {
-    const me = useStore(s => s.bowlers[0])
+    const user = useStore((s) => s.user);
+    const bowler = useStore((s) => s.currentBowler);
+
+    if (!user) {
+        return (
+            <div className="panel">
+                <h2 className="text-lg font-semibold">Profile</h2>
+                <p className="mt-2 text-slate-300">Please log in to view your profile.</p>
+            </div>
+        );
+    }
+
+    if (!bowler) {
+        return (
+            <div className="panel">
+                <h2 className="text-lg font-semibold">Profile</h2>
+                <p className="mt-2 text-slate-300">Loading your profile…</p>
+            </div>
+        );
+    }
+
+    // NOTE: currentBowler is camel-cased by the store (speed_mph -> speedMph)
     return (
-        <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-                <h2 className="text-lg font-semibold">{me.name}</h2>
-                <ul className="mt-3 space-y-1 text-sm text-slate-300">
-                    <li>Hand: {me.hand}</li>
-                    <li>Speed: {me.speedMph} mph</li>
-                    <li>Typical line: {me.line}</li>
-                    <li>Average: {me.avg}</li>
-                </ul>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-                <h3 className="text-sm font-semibold text-slate-300">Arsenal</h3>
-                <p className="text-slate-400 text-sm">Add your balls and layouts (coming soon).</p>
-            </div>
+        <div className="grid gap-4">
+            <section className="panel">
+                <h2 className="text-lg font-semibold">Account</h2>
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                    <div>
+                        <div className="label">Name</div>
+                        <div className="mt-1 text-slate-100">{bowler.name || '—'}</div>
+                    </div>
+                    <div>
+                        <div className="label">Email</div>
+                        <div className="mt-1 text-slate-100">{user.email || '—'}</div>
+                    </div>
+                </div>
+            </section>
+
+            <section className="panel">
+                <h2 className="text-lg font-semibold">Bowling Profile</h2>
+                <div className="mt-3 grid gap-3 md:grid-cols-3">
+                    <div>
+                        <div className="label">Hand</div>
+                        <div className="mt-1 text-slate-100">{bowler.hand ?? '—'}</div>
+                    </div>
+                    <div>
+                        <div className="label">Speed (mph)</div>
+                        <div className="mt-1 text-slate-100">{bowler.speedMph ?? '—'}</div>
+                    </div>
+                    <div>
+                        <div className="label">Line</div>
+                        <div className="mt-1 text-slate-100">{bowler.line ?? '—'}</div>
+                    </div>
+                </div>
+            </section>
         </div>
-    )
+    );
 }
